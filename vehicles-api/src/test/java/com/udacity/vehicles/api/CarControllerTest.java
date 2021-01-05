@@ -2,8 +2,11 @@ package com.udacity.vehicles.api;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -21,6 +24,8 @@ import com.udacity.vehicles.domain.manufacturer.Manufacturer;
 import com.udacity.vehicles.service.CarService;
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,7 +68,7 @@ public class CarControllerTest {
      */
     @Before
     public void setup() {
-        Car car = getCar();
+        Car car = createCarObjectForTesting();
         car.setId(1L);
         given(carService.save(any())).willReturn(car);
         given(carService.findById(any())).willReturn(car);
@@ -76,7 +81,7 @@ public class CarControllerTest {
      */
     @Test
     public void createCar() throws Exception {
-        Car car = getCar();
+        Car car = createCarObjectForTesting();
         mvc.perform(
                 post(new URI("/cars"))
                         .content(json.write(car).getJson())
@@ -95,8 +100,15 @@ public class CarControllerTest {
          * TODO: Add a test to check that the `get` method works by calling
          *   the whole list of vehicles. This should utilize the car from `getCar()`
          *   below (the vehicle will be the first in the list).
+         *
+         * DONE
          */
 
+        Car firstCar = createCarObjectForTesting();
+        firstCar = carService.save(firstCar);
+        List<Car> carList = carService.list();
+        Long firstCarInListId = carList.get(0).getId();
+        assertEquals(firstCar.getId(), firstCarInListId);
     }
 
     /**
@@ -108,7 +120,20 @@ public class CarControllerTest {
         /**
          * TODO: Add a test to check that the `get` method works by calling
          *   a vehicle by ID. This should utilize the car from `getCar()` below.
+         *
+         * DONE
          */
+
+        Car targetCar = createCarObjectForTesting();
+        targetCar = carService.save(targetCar);
+        Car getCar = carService.findById(targetCar.getId());
+        assertEquals(targetCar, getCar);
+
+        mvc.perform(get("/cars/" + targetCar.getId())
+            .contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk());
+
+        verify(carService, times(2)).findById(targetCar.getId());
     }
 
     /**
@@ -121,14 +146,25 @@ public class CarControllerTest {
          * TODO: Add a test to check whether a vehicle is appropriately deleted
          *   when the `delete` method is called from the Car Controller. This
          *   should utilize the car from `getCar()` below.
+         *
+         * DONE
          */
+
+        Car targetCar = createCarObjectForTesting();
+        targetCar = carService.save(targetCar);
+        Long id = targetCar.getId();
+        mvc.perform(delete("/cars/" + id)
+            .contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isNoContent());
+
+        verify(carService, times(1)).delete(id);
     }
 
     /**
      * Creates an example Car object for use in testing.
      * @return an example Car object
      */
-    private Car getCar() {
+    private Car createCarObjectForTesting() {
         Car car = new Car();
         car.setLocation(new Location(40.730610, -73.935242));
         Details details = new Details();
