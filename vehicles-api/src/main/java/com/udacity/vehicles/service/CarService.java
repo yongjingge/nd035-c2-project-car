@@ -7,6 +7,7 @@ import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.domain.car.CarRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -91,10 +92,13 @@ public class CarService {
      */
     public Car save(Car car) {
         if (car.getId() != null) {
+            // update the vehicle by its condition, details, and location, also need to reflect its modified time
             return carRepository.findById(car.getId())
                     .map(carToBeUpdated -> {
                         carToBeUpdated.setDetails(car.getDetails());
                         carToBeUpdated.setLocation(car.getLocation());
+                        carToBeUpdated.setCondition(car.getCondition());
+                        carToBeUpdated.setModifiedAt(LocalDateTime.now());
                         return carRepository.save(carToBeUpdated);
                     }).orElseThrow(CarNotFoundException::new);
         }
