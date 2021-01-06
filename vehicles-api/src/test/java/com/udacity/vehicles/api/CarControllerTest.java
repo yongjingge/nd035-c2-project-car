@@ -7,9 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -90,6 +88,33 @@ public class CarControllerTest {
                 .andExpect(status().isCreated());
     }
 
+
+    /**
+     * Test for successful update of an existing car in the system
+     * @throws Exception when car update fails in the system
+     */
+    @Test
+    public void updateCar () throws Exception {
+        Car car = createCarObjectForTesting();
+        car = carService.save(car);
+        Long carId = car.getId();
+
+        // update info
+        Car updateCarInfo = new Car();
+        updateCarInfo.setId(carId);
+        updateCarInfo.setLocation(updateCarLocation());
+        updateCarInfo.setDetails(updateCarDetails());
+        updateCarInfo.setCondition(Condition.NEW);
+
+        mvc.perform(
+                put("/cars/" + carId)
+                .content(json.write(updateCarInfo).getJson())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().is2xxSuccessful());
+    }
+
+
     /**
      * Tests if the read operation appropriately returns a list of vehicles.
      * @throws Exception if the read operation of the vehicle list fails
@@ -129,7 +154,8 @@ public class CarControllerTest {
         Car getCar = carService.findById(targetCar.getId());
         assertEquals(targetCar, getCar);
 
-        mvc.perform(get("/cars/" + targetCar.getId())
+        mvc.perform(
+                get("/cars/" + targetCar.getId())
             .contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk());
 
@@ -182,5 +208,40 @@ public class CarControllerTest {
         car.setDetails(details);
         car.setCondition(Condition.USED);
         return car;
+    }
+
+    /**
+     * Provides an example Location object
+     * @return Location
+     */
+    private Location updateCarLocation () {
+        Location locationUpdate = new Location(40.730610, -73.935242);
+        locationUpdate = mapsClient.getAddress(locationUpdate);
+
+//        locationUpdate.setAddress("1 Somewhere St");
+//        locationUpdate.setCity("Toronto");
+//        locationUpdate.setState("Ontario");
+//        locationUpdate.setZip("N8Q 1E1");
+        return locationUpdate;
+    }
+
+    /**
+     * Provides an example Details object
+     * @return Details
+     */
+    private Details updateCarDetails () {
+        Details detailsUpdate = new Details();
+        detailsUpdate.setModel("Impala");
+        detailsUpdate.setMileage(22020);
+        detailsUpdate.setExternalColor("black");
+        detailsUpdate.setBody("sedan");
+        detailsUpdate.setEngine("4.0L V6");
+        detailsUpdate.setFuelType("Gasoline");
+        detailsUpdate.setModelYear(2020);
+        detailsUpdate.setProductionYear(2020);
+        detailsUpdate.setNumberOfDoors(2);
+        detailsUpdate.setManufacturer(new Manufacturer(102, "Ford"));
+
+        return detailsUpdate;
     }
 }
